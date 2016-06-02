@@ -9,6 +9,7 @@ binmode(STDOUT,':utf8');
 binmode(STDERR,':utf8');
 
 use Getopt::Long;
+use Text::CSV;
 
 my %opts;
 GetOptions(
@@ -44,14 +45,31 @@ sub help {
 
 sub read_table {
 	my @table=();
-	while(<STDIN>) {
-		s/\r|\n//g;
-		if($_ ne '') {
-			push @table,[split(/\t/)];
-		}
+	my $buf="";
+	my $csv=Text::CSV->new({
+		quote_char          => '"',
+		escape_char         => '"',
+		sep_char            => "\t",
+		binary              => 1,
+	});
+
+	my @datas=();
+	while(my $row=$csv->getline(*STDIN)) {
+		push @datas,$row;
 	}
-	return \@table;
+	return \@datas;
 }
+
+# sub read_table {
+# 	my @table=();
+# 	while(<STDIN>) {
+# 		s/\r|\n//g;
+# 		if($_ ne '') {
+# 			push @table,[split(/\t/)];
+# 		}
+# 	}
+# 	return \@table;
+# }
 
 sub markdown {
 	my @table=@{read_table()};
@@ -63,6 +81,7 @@ sub markdown {
 			push @tb,$tbl->[$i] || $spacer;
 		}
 		my $buf=join(" | ",@tb);
+		$buf=~s/\n/ <br> /g;
 		say $buf;
 		if(!$flag) {
 			my $line=$buf;
